@@ -25,6 +25,8 @@ class PoetryDialogueTask(Enum):
     @staticmethod
     def make_continue_poem_dialogue(record: "PoetryRecord") -> str:
         line_splits = record.poem.split("\n")
+        if len(line_splits) <= 1:
+            return PoetryDialogueTask.random_task_excluding(PoetryDialogueTask.CONTINUE).prepare_dialogue(record)
         line_split_idx = np.random.randint(1, len(line_splits))
         return CONTINUE_POEM_TEMPLATE.format(
             poem_start="\n".join(line_splits[:line_split_idx]),
@@ -64,6 +66,10 @@ class PoetryDialogueTask(Enum):
     @staticmethod
     def random_task():
         return np.random.choice(PoetryDialogueTask)
+
+    @staticmethod
+    def random_task_excluding(*exclude_tasks: "PoetryDialogueTask"):
+        return np.random.choice([t for t in PoetryDialogueTask if t not in exclude_tasks])
 
     def prepare_dialogue(self, record: PoetryRecord) -> str:
         return getattr(PoetryDialogueTask, self.value)(record)
