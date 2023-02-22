@@ -1,17 +1,14 @@
-from transformers import (
-    TokenClassificationPipeline,
-    AutoModelForTokenClassification,
-    AutoTokenizer,
-)
-from transformers.pipelines import AggregationStrategy
-import numpy as np
 from typing import List
+
+import numpy as np
 import torch
+from transformers import AutoModelForTokenClassification, AutoTokenizer, TokenClassificationPipeline
+from transformers.pipelines import AggregationStrategy
 
 
 def extract_keywords(poem: str, num_keywords: int) -> List[str]:
     model_out = MODEL_STORE.keyword_extractor(poem, num_keywords=num_keywords)
-    #print(model_out)
+    # print(model_out)
     return [e["word"] for e in model_out]
 
 
@@ -19,32 +16,36 @@ class FixedERPipeline(TokenClassificationPipeline):
     """Pipeline for Entity Recognition, modified to allow specification
     of the number of entities to extract
     """
+
     def __init__(self, model, *args, **kwargs):
         super().__init__(
             model=AutoModelForTokenClassification.from_pretrained(model),
             tokenizer=AutoTokenizer.from_pretrained(model),
             *args,
-            **kwargs
+            **kwargs,
         )
         self._num_keywords = 1
         self.non_entity_label = "O"
         self.key_label = "KEY"
-        self.b_key_label_idx, = [idx for idx, lbl in self.model.config.id2label.items() if lbl == "B-KEY"]  # index for the B-KEY entity
+        (self.b_key_label_idx,) = [
+            idx for idx, lbl in self.model.config.id2label.items() if lbl == "B-KEY"
+        ]  # index for the B-KEY entity
 
     def __call__(self, *args, num_keywords: int = 1, **kwargs):
         self._num_keywords = num_keywords
         return super().__call__(*args, **kwargs)
 
-    """Taken from 
+    """Taken from
     https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/token_classification.py#L341
-    
+
     Modified to fix the total number of keyphrases returned
     """
+
     def aggregate(self, pre_entities: List[dict], aggregation_strategy: AggregationStrategy) -> List[dict]:
         aggregation_strategy = AggregationStrategy.SIMPLE
-        sorted_entities = sorted([e for e in pre_entities],
-                              key=lambda e: e["scores"][self.b_key_label_idx],
-                              reverse=True)
+        sorted_entities = sorted(
+            [e for e in pre_entities], key=lambda e: e["scores"][self.b_key_label_idx], reverse=True
+        )
         extracted_b_key_words = set()
         extracted_b_key_idxs = set()
         # extract top-n tokens with highest B-KEY score, skipping duplicates
@@ -64,7 +65,7 @@ class FixedERPipeline(TokenClassificationPipeline):
                 else:
                     pre_entity["scores"][self.b_key_label_idx] = 0
                     entity_idx = pre_entity["scores"].argmax()
-                
+
                 score = pre_entity["scores"][entity_idx]
                 entity = {
                     "entity": self.model.config.id2label[entity_idx],
@@ -84,9 +85,10 @@ class FixedERPipeline(TokenClassificationPipeline):
 
     """Taken from
     https://github.com/huggingface/transformers/blob/main/src/transformers/pipelines/token_classification.py#L420
-    
+
     Modified to prevent lone I-KEYs from being extracted
     """
+
     def group_sub_entities(self, entities: List[dict]) -> dict:
         """
         Group together the adjacent tokens with the same entity predicted.
@@ -94,7 +96,7 @@ class FixedERPipeline(TokenClassificationPipeline):
             entities (`dict`): The entities predicted by the pipeline.
         """
         # Get the first entity in the entity group
-        
+
         # modify to set as non-entity if no B-KEY exists in group
         entity = self.non_entity_label
         score = np.nanmean([entity["score"] for entity in entities])
@@ -121,7 +123,7 @@ class ModelStore:
     def __init__(self):
         self.keyword_extractor = None
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        
+
     def load(self):
         self.keyword_extractor = FixedERPipeline(
             model="yanekyuk/bert-uncased-keyword-extractor",

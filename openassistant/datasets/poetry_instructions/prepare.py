@@ -1,11 +1,11 @@
-import os
-import numpy as np
 import json
-from tqdm import tqdm
-from datasets import load_dataset, DatasetDict
+import os
 
-from data.helper import PoetryDialogueTask, PoetryRecord
+import numpy as np
 from data.augmentation import MODEL_STORE
+from data.helper import PoetryDialogueTask, PoetryRecord
+from datasets import DatasetDict, load_dataset
+from tqdm import tqdm
 
 
 def make_splits(ds, test=0.2, val=0.05):
@@ -13,18 +13,20 @@ def make_splits(ds, test=0.2, val=0.05):
     Remaining 1 - (test + val) fraction of samples will be in train set."""
     train_test = ds.train_test_split(test_size=test + val)
     test_val = train_test["test"].train_test_split(test_size=val / test)
-    return DatasetDict({
-        "train": train_test["train"],
-        "test": test_val["train"],
-        "validation": test_val["test"],
-    })
+    return DatasetDict(
+        {
+            "train": train_test["train"],
+            "test": test_val["train"],
+            "validation": test_val["test"],
+        }
+    )
 
 
 def main(output_dir: str = "data"):
     """Download and prepare the dataset for use."""
     np.random.seed(42)
-    merve_poetry = make_splits(load_dataset('merve/poetry')['train'])
-    matthh_poetry = make_splits(load_dataset('matthh/gutenberg-poetry-corpus')['train'])
+    merve_poetry = make_splits(load_dataset("merve/poetry")["train"])
+    matthh_poetry = make_splits(load_dataset("matthh/gutenberg-poetry-corpus")["train"])
     os.makedirs(output_dir, exist_ok=True)
 
     MODEL_STORE.load()
@@ -44,9 +46,8 @@ def main(output_dir: str = "data"):
                 )
 
                 dialogue = PoetryDialogueTask.random_task().prepare_dialogue(record)
-                #dialogue = list(PoetryDialogueTask)[i].prepare_dialogue(record)
+                # dialogue = list(PoetryDialogueTask)[i].prepare_dialogue(record)
                 output.write(f"{json.dumps({'conversation': dialogue})}\n")
-                
 
             for i in tqdm(range(len(matthh_poetry[split])), desc=split):
                 # if i > 3:
@@ -61,7 +62,7 @@ def main(output_dir: str = "data"):
                 )
 
                 dialogue = PoetryDialogueTask.random_task().prepare_dialogue(record)
-                #dialogue = list(PoetryDialogueTask)[i].prepare_dialogue(record)
+                # dialogue = list(PoetryDialogueTask)[i].prepare_dialogue(record)
                 output.write(f"{json.dumps({'conversation': dialogue})}\n")
 
 

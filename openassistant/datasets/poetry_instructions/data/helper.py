@@ -1,9 +1,15 @@
 from dataclasses import dataclass
-import numpy as np
 from enum import Enum
 
-from .template import *
+import numpy as np
+
 from .augmentation import extract_keywords
+from .template import (
+    CONTINUE_POEM_TEMPLATE,
+    NEW_POEM_ABOUT_IN_STYLE_OF_TEMPLATE,
+    NEW_POEM_ABOUT_TEMPLATE,
+    NEW_POEM_IN_STYLE_OF_TEMPLATE,
+)
 
 
 @dataclass
@@ -21,7 +27,7 @@ class PoetryDialogueTask(Enum):
     IN_STYLE = "make_poem_in_style_dialogue"
     ABOUT_KEYWORDS = "make_poem_about_keywords_dialogue"
     ABOUT_KEYWORDS_IN_STYLE = "make_poem_about_keywords_in_style_dialogue"
-    
+
     @staticmethod
     def make_continue_poem_dialogue(record: "PoetryRecord") -> str:
         line_splits = record.poem.split("\n")

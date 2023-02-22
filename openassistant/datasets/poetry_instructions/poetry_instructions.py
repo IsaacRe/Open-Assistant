@@ -31,16 +31,14 @@ https://github.com/bigscience-workshop/biomedical/blob/main/templates/template.p
 TODO: Before submitting your script, delete this docstring and replace it with a description of your dataset.
 """
 
-import os
 import json
+import os
 from typing import Dict, List, Tuple
 
 import datasets
 
-from hub import OpenAssistantConfig
-
 # TODO: import the schema (i.e. features) that fits your dataset:
-from hub import features
+from hub import OpenAssistantConfig, features
 
 # TODO: Add BibTeX citation where appropriate
 _CITATION = """\
@@ -90,7 +88,9 @@ _URLS = {
 }
 
 # TODO: add supported task by dataset. One dataset may support multiple tasks
-_SUPPORTED_TASKS = ["dialogue-modeling"]  # example: [Tasks.TRANSLATION, Tasks.NAMED_ENTITY_RECOGNITION, Tasks.RELATION_EXTRACTION]
+_SUPPORTED_TASKS = [
+    "dialogue-modeling"
+]  # example: [Tasks.TRANSLATION, Tasks.NAMED_ENTITY_RECOGNITION, Tasks.RELATION_EXTRACTION]
 
 # TODO: set this to a version that is associated with the dataset. if none exists use "1.0.0"
 #  This version doesn't have to be consistent with semantic versioning. Anything that is
@@ -202,6 +202,7 @@ class PoetryInstructionsDataset(datasets.GeneratorBasedBuilder):
                         return
                     yield key, json.loads(line)
                     key += 1
+
 
 # This allows you to run your dataloader with `python [dataset_name].py` during development
 # TODO: Remove this before making your PR
